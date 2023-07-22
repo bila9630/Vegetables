@@ -6,6 +6,11 @@ from PIL import Image
 import io
 from get_chefkoch import Search
 
+st.set_page_config(
+    page_title="Vegetable ML",
+    page_icon="🍱",
+)
+
 model = load_model("veg_model.h5")
 
 vegetable_dict = {
