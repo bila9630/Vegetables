@@ -4,25 +4,26 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import numpy as np
 from PIL import Image
 import io
+from get_chefkoch import Recipe, Search
 
 model = load_model("veg_model.h5")
 
 vegetable_dict = {
-    0: 'Bean',
-    1: 'Bitter_Gourd',
-    2: 'Bottle_Gourd',
-    3: 'Brinjal',
-    4: 'Broccoli',
-    5: 'Cabbage',
-    6: 'Capsicum',
-    7: 'Carrot',
-    8: 'Cauliflower',
-    9: 'Cucumber',
-    10: 'Papaya',
-    11: 'Potato',
-    12: 'Pumpkin',
-    13: 'Radish',
-    14: 'Tomato'
+    0: "Bohne",
+    1: "Bittergurke",
+    2: "Flaschenkürbis",
+    3: "Aubergine",
+    4: "Brokkoli",
+    5: "Kohl",
+    6: "Paprika",
+    7: "Karrote",
+    8: "Blumenkohl",
+    9: "Gurke",
+    10: "Papaya",
+    11: "Kartoffel",
+    12: "Kürbis",
+    13: "Radieschen",
+    14: "Tomaten"
 }
 
 
@@ -42,20 +43,37 @@ img_file_buffer = st.camera_input("Take a picture")
 
 if img_file_buffer is not None:
     bytes_data = img_file_buffer.getvalue()
+    
+    # img_arr_2 shape -> (1, 100, 100, 3)
+    # 1 -> batch size
     img_arr_2 = load_img(bytes_data)
-    st.write(img_arr_2.shape)
+
+    # array with probability for each class
     prediction = model.predict(img_arr_2)
-    st.write(prediction)
+    # st.write(prediction)
     
     # get the vegetable name
     category_name = vegetable_dict[np.argmax(prediction)]
-    st.write(category_name)
 
     # get the probability    
     prob = np.max(prediction)
     rounded_prob = round(prob, 2)
-    st.write(rounded_prob)
 
     st.write(category_name + " - probability: " + str(rounded_prob))
     
-    
+    # get the recipe
+    s = Search(category_name)
+    recipe = s.recipes(limit=1)[0]
+    st.subheader(recipe.name)
+
+    # recipe image
+    st.image(recipe.image)
+
+    st.write("Dauer: " + str(recipe.totalTime) + " Minuten")
+
+    st.write("Zutaten:")
+    st.write(recipe.ingredients)
+
+
+    st.write("Beschreibung:")
+    st.write(recipe.description)
