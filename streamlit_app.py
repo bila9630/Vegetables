@@ -1,6 +1,8 @@
 import streamlit as st
 from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from tensorflow.keras.preprocessing.image import img_to_array
+from tensorflow.keras.applications.inception_v3 import preprocess_input
+from tensorflow.keras.preprocessing import image
 import numpy as np
 from PIL import Image
 import io
@@ -11,7 +13,8 @@ st.set_page_config(
     page_icon="🍱",
 )
 
-model = load_model("veg_model.h5")
+model_cnn = load_model("veg_model.h5")
+model_tf = load_model("veg_tf.h5")
 
 vegetable_dict = {
     0: "Bohne",
@@ -32,7 +35,7 @@ vegetable_dict = {
 }
 
 
-def load_img(img_bytes):
+def get_prediction_cnn(img_bytes):
     # read image as bytes
     img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
 
@@ -48,13 +51,56 @@ def load_img(img_bytes):
     # expand dimension to fit model (1, 100, 100, 3)
     # 1 -> batch size
     img_arr_2 = np.expand_dims(img_scaled, axis=0)
-    return img_arr_2
+    
+    # array with probability for each class
+    prediction = model_cnn.predict(img_arr_2)
+
+    # get the vegetable name
+    category_name = vegetable_dict[np.argmax(prediction)]
+
+    # get the probability
+    prob = np.max(prediction)
+    rounded_prob = round(prob, 2)
+
+    return category_name, rounded_prob
+
+
+def get_prediction_transfer_learning(img_bytes):
+    # read image as bytes and resize to 224x224
+    img_resized = image.load_img(io.BytesIO(img_bytes), target_size=(224, 224))
+
+    # flatten img array
+    img_arr = img_to_array(img_resized)
+
+    # Add extra dimension to fit model
+    img_arr_2 = np.expand_dims(img_arr, axis=0)
+
+    # preprocess func for inceptionV3 from the library itself
+    img_arr_3 = preprocess_input(img_arr_2)
+
+    # array with probability for each class
+    prediction = model_tf.predict(img_arr_3)
+
+    # get the vegetable name
+    category_name = vegetable_dict[np.argmax(prediction)]
+
+    # get the probability
+    prob = np.max(prediction)
+    rounded_prob = round(prob, 2)
+
+    return category_name, rounded_prob
 
 
 st.title("Yummy vegetables!")
 st.write("Simple upload a picture of a vegetable and we will generate a recipe for you!")
 
 img_file_buffer = st.camera_input("Take a picture")
+
+option = st.selectbox(
+    "Select your model",
+    ("CNN", "Transfer Learning (InceptionV3)"))
+
+st.write('You selected:', option)
 
 
 def display_recipe(recipe):
@@ -70,20 +116,11 @@ def display_recipe(recipe):
 if img_file_buffer is not None:
     bytes_data = img_file_buffer.getvalue()
 
-    # img_arr_2 shape -> (1, 100, 100, 3)
-    # 1 -> batch size
-    img_arr_2 = load_img(bytes_data)
-
-    # array with probability for each class
-    prediction = model.predict(img_arr_2)
-    # st.write(prediction)
-
-    # get the vegetable name
-    category_name = vegetable_dict[np.argmax(prediction)]
-
-    # get the probability
-    prob = np.max(prediction)
-    rounded_prob = round(prob, 2)
+    if option == "CNN":
+        category_name, rounded_prob = get_prediction_cnn(bytes_data)
+    else:
+        category_name, rounded_prob = get_prediction_transfer_learning(
+            bytes_data)
 
     st.write(category_name + " - probability: " + str(rounded_prob))
 
@@ -95,9 +132,10 @@ if img_file_buffer is not None:
 
     current_recipe_index = 0
 
-    # Create buttons to show the next and previous recipe
+    # Create two columns
     col1, col2 = st.columns(2)
 
+    # Create buttons to show the next and previous recipe
     if col1.button("Previous Recipe"):
         current_recipe_index -= 1
         if current_recipe_index < 0:
