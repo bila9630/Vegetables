@@ -1,5 +1,10 @@
 # Vegetables_ML
-Check out our application:
+Check out our application: https://vegetables-ml.streamlit.app/
+
+## Analytics
+- **Model Development** can be found in the folder [/analytics](/analytics)
+- Since the model was trained on Kaggle, please find the notebook here: https://www.kaggle.com/code/bila9630/vegetable-cnn
+- If you want to run the model locally, please download the dataset from Kaggle and adjust the path to the dataset in the notebook
 
 ## Project description
 Idea: Developing an application that identify vegetables
@@ -7,9 +12,6 @@ Idea: Developing an application that identify vegetables
 <br>Project: Vegetables ML
 <br>Group: Hannah Schult, Sofie Pischl, Viet Duc Kieu
 
-## Navigation
-- **Model Development** can be found in the folder [/analytics](/analytics)
-- **Data** can be found in the folder [/data](/data)
 
 ## application
 ### how to start locally
